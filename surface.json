@@ -1,0 +1,30 @@
+{
+  "id": "terminal",
+  "name": "Terminal",
+  "version": "1.0.0",
+  "entry": "index.html",
+  "description": "A real terminal: multiple shells on real PTYs, resize, exit status, Thai text and macOS Option/Cmd+arrow editing keys.",
+  "methods": [
+    "term.open",
+    "term.write",
+    "term.poll",
+    "term.resize",
+    "term.close",
+    "term.list",
+    "app.ping",
+    "app.info"
+  ],
+  "contributes": [
+    {
+      "slot": "nav",
+      "title": "Terminal",
+      "icon": "terminal"
+    }
+  ],
+  "backend": {
+    "command": "bin/terminal-backend"
+  },
+  "cli": {
+    "command": "bin/terminal-cli"
+  }
+}

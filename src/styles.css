@@ -1,0 +1,341 @@
+:root {
+  --term-bg: #14100c;
+  --term-panel: #1e1813;
+  --term-raised: #282019;
+  --term-border: #3a2f24;
+  --term-fg: #f3e7d7;
+  --term-fg-muted: #a9927d;
+  --term-fg-dim: #927e6a;
+  --term-accent: #7dba37;
+  --term-attention: #eaee5c;
+}
+
+html,
+body,
+#app.shell {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--term-bg);
+  color: var(--term-fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  overflow: hidden;
+}
+
+.terminal-shell {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  height: 100%;
+  background: var(--term-bg);
+}
+
+.terminal-bar {
+  display: flex;
+  height: 34px;
+  flex: 0 0 auto;
+  align-items: stretch;
+  border-bottom: 1px solid var(--term-border);
+  background: var(--term-panel);
+}
+
+.terminal-tabs {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: stretch;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.terminal-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-drop-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 3;
+  width: 3px;
+  transform: translateX(-50%);
+  background: var(--term-accent);
+  box-shadow: 0 0 6px 1px color-mix(in srgb, var(--term-accent) 90%, transparent);
+  pointer-events: none;
+}
+
+.terminal-drop-indicator[hidden] {
+  display: none;
+}
+
+.terminal-drop-indicator::before,
+.terminal-drop-indicator::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+.terminal-drop-indicator::before {
+  top: 0;
+  border-top: 6px solid var(--term-accent);
+}
+
+.terminal-drop-indicator::after {
+  bottom: 0;
+  border-bottom: 6px solid var(--term-accent);
+}
+
+.terminal-tab {
+  display: flex;
+  max-width: 220px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  user-select: none;
+  align-items: center;
+  gap: 6px;
+  border-right: 1px solid var(--term-border);
+  padding: 0 6px 0 10px;
+  color: var(--term-fg-muted);
+  font-size: 11px;
+  outline: none;
+}
+
+.terminal-tab:hover {
+  background: var(--term-raised);
+  color: var(--term-fg);
+}
+
+.terminal-tab.is-active {
+  background: var(--term-bg);
+  color: var(--term-fg);
+  box-shadow: inset 0 -2px 0 0 var(--term-accent);
+}
+
+.terminal-tab:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--term-accent);
+}
+
+.terminal-tab.is-dragging {
+  opacity: 0.45;
+}
+
+.terminal-tab-rename {
+  width: 96px;
+  border: 1px solid var(--term-accent);
+  border-radius: 3px;
+  background: var(--term-bg);
+  padding: 1px 4px;
+  color: var(--term-fg);
+  font: inherit;
+  outline: none;
+}
+
+.terminal-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: var(--term-fg-dim);
+}
+
+.terminal-dot.is-running {
+  background: var(--term-accent);
+}
+
+.terminal-dot.is-starting {
+  background: var(--term-attention);
+}
+
+.terminal-dot.is-exited {
+  background: #ff6b6b;
+}
+
+.terminal-dot.is-failed {
+  background: #ff6b6b;
+}
+
+.terminal-tab-title {
+  cursor: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-tab-close {
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--term-fg-muted);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.terminal-tab-close:hover {
+  background: var(--term-border);
+  color: #ffffff;
+}
+
+.terminal-tab-close:focus-visible {
+  outline: 1px solid var(--term-accent);
+}
+
+.terminal-bar-space {
+  flex: 0 0 auto;
+  width: 2px;
+}
+
+.terminal-new {
+  width: 30px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: var(--term-fg-muted);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.terminal-new:hover {
+  color: var(--term-fg);
+}
+
+.terminal-new:disabled {
+  cursor: default;
+  color: #3a3a3a;
+}
+
+.terminal-new:focus-visible {
+  outline: 1px solid var(--term-accent);
+}
+
+.terminal-body {
+  position: relative;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 6px 8px 0;
+}
+
+.terminal-pane {
+  position: absolute;
+  inset: 6px 8px 0;
+  display: none;
+}
+
+.terminal-pane.is-active {
+  display: block;
+}
+
+.terminal-pane .xterm {
+  height: 100%;
+}
+
+.terminal-pane .xterm-viewport {
+  background-color: var(--term-bg) !important;
+}
+
+.terminal-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--term-fg-muted);
+  font-size: 12px;
+}
+
+.terminal-empty[hidden] {
+  display: none;
+}
+
+.terminal-empty-title {
+  margin: 0;
+}
+
+.terminal-empty-button {
+  cursor: pointer;
+  border: 1px solid var(--term-border);
+  border-radius: 4px;
+  background: transparent;
+  padding: 3px 10px;
+  color: var(--term-fg);
+  font: inherit;
+}
+
+.terminal-empty-button:hover {
+  border-color: var(--term-accent);
+}
+
+.terminal-empty-button:disabled {
+  cursor: default;
+  border-color: var(--term-border);
+  color: var(--term-fg-dim);
+}
+
+.terminal-notice {
+  min-height: 18px;
+  flex: 0 0 auto;
+  padding: 2px 10px 0;
+  color: var(--term-fg-muted);
+  font-size: 11px;
+}
+
+.terminal-notice.is-error {
+  color: #ff6b6b;
+}
+
+.terminal-hint {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--term-border);
+  padding: 4px 10px;
+  color: var(--term-fg-dim);
+  font-size: 10.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.unhosted {
+  display: flex;
+  height: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 24px;
+  color: var(--term-fg-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.unhosted h1 {
+  margin: 0;
+  color: var(--term-fg);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.unhosted p {
+  margin: 0;
+}
+
+.unhosted-mark {
+  color: var(--term-accent);
+}

@@ -1,0 +1,15 @@
+[package]
+name = "terminal-backend"
+version = "1.0.0"
+edition = "2021"
+description = "The terminal surface's own programs: a JSON-RPC backend and a CLI over one method table, no network, no Tauri."
+
+[workspace]
+
+[dependencies]
+base64 = "0.23.1"
+portable-pty = "0.9"
+serde_json = "1.0"
+
+[profile.release]
+strip = true
