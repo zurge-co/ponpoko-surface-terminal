@@ -1,5 +1,5 @@
 export const TERMINAL_FONT_FAMILY =
-  '"SF Mono", "SFMono-Regular", Menlo, Monaco, "IBM Plex Sans Thai Looped", Thonburi, Ayuthaya, "Noto Sans Thai", monospace';
+  '"SF Mono", "SFMono-Regular", Menlo, Monaco, "Noto Sans Thai", "IBM Plex Sans Thai Looped", Thonburi, Ayuthaya, monospace';
 
 export const TERMINAL_FONT_SIZE = 13;
 export const TERMINAL_SCROLLBACK = 10_000;

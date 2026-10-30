@@ -1,3 +1,5 @@
+import "@fontsource/noto-sans-thai/thai-400.css";
+import "@fontsource/noto-sans-thai/thai-600.css";
 import "@xterm/xterm/css/xterm.css";
 import "./styles.css";
 
