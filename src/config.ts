@@ -58,6 +58,9 @@ export function themeFor(tokens: Record<string, string>): typeof TERMINAL_THEME 
       colour.slice(3, 5),
       16,
     )}, ${Number.parseInt(colour.slice(5, 7), 16)}, ${alpha})`;
+  const green = pick(tokens.accent_lime, accent);
+  const yellow = pick(tokens.accent_gold, TERMINAL_THEME.yellow);
+  const red = pick(tokens.danger, TERMINAL_THEME.red);
   return {
     ...TERMINAL_THEME,
     background,
@@ -66,7 +69,21 @@ export function themeFor(tokens: Record<string, string>): typeof TERMINAL_THEME 
     cursorAccent: background,
     selectionBackground: rgba(accent, 0.25),
     selectionForeground: foreground,
-    black: pick(tokens.panel, TERMINAL_THEME.black),
+    black: pick(tokens.text_dim, foreground),
+    red,
+    green,
+    yellow,
+    blue: accent,
+    magenta: red,
+    cyan: green,
+    brightBlack: pick(tokens.text_muted, foreground),
+    brightRed: red,
+    brightGreen: green,
+    brightYellow: yellow,
+    brightBlue: accent,
+    brightMagenta: red,
+    brightCyan: green,
+    brightWhite: foreground,
     white: foreground,
   };
 }

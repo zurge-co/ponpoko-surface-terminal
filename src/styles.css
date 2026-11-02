@@ -8,6 +8,8 @@
   --term-fg-dim: #927e6a;
   --term-accent: #7dba37;
   --term-attention: #eaee5c;
+  --term-danger: #ff6b6b;
+  --term-hover: #282019;
 }
 
 html,
@@ -110,7 +112,7 @@ body {
 }
 
 .terminal-tab:hover {
-  background: var(--term-raised);
+  background: var(--term-hover);
   color: var(--term-fg);
 }
 
@@ -156,11 +158,11 @@ body {
 }
 
 .terminal-dot.is-exited {
-  background: #ff6b6b;
+  background: var(--term-danger);
 }
 
 .terminal-dot.is-failed {
-  background: #ff6b6b;
+  background: var(--term-danger);
 }
 
 .terminal-tab-title {
@@ -187,8 +189,8 @@ body {
 }
 
 .terminal-tab-close:hover {
-  background: var(--term-border);
-  color: #ffffff;
+  background: var(--term-hover);
+  color: var(--term-fg);
 }
 
 .terminal-tab-close:focus-visible {
@@ -212,12 +214,13 @@ body {
 }
 
 .terminal-new:hover {
+  background: var(--term-hover);
   color: var(--term-fg);
 }
 
 .terminal-new:disabled {
   cursor: default;
-  color: #3a3a3a;
+  color: var(--term-fg-dim);
 }
 
 .terminal-new:focus-visible {
@@ -298,7 +301,7 @@ body {
 }
 
 .terminal-notice.is-error {
-  color: #ff6b6b;
+  color: var(--term-danger);
 }
 
 .terminal-hint {

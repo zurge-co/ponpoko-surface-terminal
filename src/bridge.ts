@@ -52,6 +52,7 @@ export function createSurfaceLink(options: SurfaceLinkOptions): SurfaceLink {
   const { view, transport } = options;
   const newId = options.newId ?? defaultId;
   const pending = new Map<string, { resolve: (value: unknown) => void; reject: (error: Error) => void }>();
+  let greeted = false;
   const helloHandlers = new Set<(doors: readonly string[]) => void>();
   const paletteHandlers = new Set<(tokens: PaletteTokens) => void>();
 
@@ -60,6 +61,8 @@ export function createSurfaceLink(options: SurfaceLinkOptions): SurfaceLink {
     if (message.channel !== SURFACE_BRIDGE_CHANNEL || message.view !== view) return;
 
     if (message.control === HOST_HELLO) {
+      if (greeted) return;
+      greeted = true;
       const doors = Array.isArray(message.doors)
         ? message.doors.filter((door): door is string => typeof door === "string")
         : [];
@@ -68,12 +71,12 @@ export function createSurfaceLink(options: SurfaceLinkOptions): SurfaceLink {
     }
 
     if (message.control === HOST_PALETTE) {
-      const tokens = readPaletteTokens(message.palette);
+      const tokens = readPaletteTokens({ tokens: message.tokens });
       if (tokens) for (const handler of paletteHandlers) handler(tokens);
       return;
     }
 
-    const id = typeof message.id === "string" ? message.id : "";
+    const id = typeof message.request_id === "string" ? message.request_id : "";
     const waiter = pending.get(id);
     if (!waiter) return;
     pending.delete(id);
@@ -83,8 +86,8 @@ export function createSurfaceLink(options: SurfaceLinkOptions): SurfaceLink {
     }
     waiter.reject(
       new Error(
-        typeof message.error === "string" && message.error.length > 0
-          ? message.error
+        isRecord(message.error) && typeof message.error.message === "string"
+          ? message.error.message
           : "the host refused the call and did not say why",
       ),
     );
@@ -99,8 +102,9 @@ export function createSurfaceLink(options: SurfaceLinkOptions): SurfaceLink {
         transport.post({
           channel: SURFACE_BRIDGE_CHANNEL,
           view,
-          id,
-          verb: TERMINAL_VERB,
+          request_id: id,
+          namespace: "host.surface",
+          operation: TERMINAL_VERB,
           payload: { method, params },
         });
       });

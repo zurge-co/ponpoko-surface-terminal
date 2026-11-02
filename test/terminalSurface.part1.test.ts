@@ -89,15 +89,15 @@ describe("terminal wire — the host's closed vocabulary", () => {
     expect(host.posted[1]).toEqual({
       channel: SURFACE_BRIDGE_CHANNEL,
       view: VIEW,
-      id: "req-1",
-      verb: "backend.call",
+      request_id: "req-1",
+      namespace: "host.surface", operation: "backend.call",
       payload: { method: "demo.open", params: { cols: 80, rows: 24 } },
     });
 
     host.deliver({
       channel: SURFACE_BRIDGE_CHANNEL,
       view: VIEW,
-      id: "req-1",
+      request_id: "req-1",
       ok: true,
       result: { id: "t1" },
     });
@@ -118,7 +118,7 @@ describe("terminal wire — the host's closed vocabulary", () => {
       channel: SURFACE_BRIDGE_CHANNEL,
       view: "another-view",
       control: HOST_HELLO,
-      doors: ["backend.call"],
+      doors: ["host.surface.backend.call"],
     });
     expect(doors).toEqual([]);
 
@@ -126,17 +126,17 @@ describe("terminal wire — the host's closed vocabulary", () => {
       channel: SURFACE_BRIDGE_CHANNEL,
       view: VIEW,
       control: HOST_HELLO,
-      doors: ["backend.call"],
+      doors: ["host.surface.backend.call"],
     });
-    expect(doors).toEqual([["backend.call"]]);
+    expect(doors).toEqual([["host.surface.backend.call"]]);
 
     const pending = link.callBackend("demo.poll", { id: "t1" });
     host.deliver({
       channel: SURFACE_BRIDGE_CHANNEL,
       view: VIEW,
-      id: "req-2",
+      request_id: "req-2",
       ok: false,
-      error: "the terminal session 't1' is not open",
+      error: { code: "host_unavailable", message: "the terminal session 't1' is not open", retryable: false },
     });
     await expect(pending).rejects.toThrow(/not open/);
   });

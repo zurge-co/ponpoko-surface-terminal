@@ -1,7 +1,7 @@
+import { applyPalette } from "./palette";
 import { FitAddon } from "@xterm/addon-fit";
 import { UnicodeGraphemesAddon } from "@xterm/addon-unicode-graphemes";
 import { Terminal } from "@xterm/xterm";
-
 import { bytesToBase64, textChunks } from "./base64";
 import { createTerminalApi } from "./api";
 import type { SurfaceLink } from "./bridge";
@@ -24,25 +24,22 @@ import { pageClients, reclaimSessions } from "./terminal/reclaim";
 import { clamp, element, message, shellName } from "./terminal/helpers";
 import { legacyCopy } from "./terminal/legacy";
 import { cleanTabTitle, moveItem } from "./tabs";
-
 const TEXT_ENCODER = new TextEncoder();
 const MIN_COLS = 1;
 const MAX_COLS = 500;
 const MIN_ROWS = 1;
 const MAX_ROWS = 200;
-
 export interface TerminalAppOptions {
   root: HTMLElement;
   link: SurfaceLink;
 }
-
 export function createTerminalApp({ root, link }: TerminalAppOptions): void {
   const api = createTerminalApi(link);
+  let activeTheme = TERMINAL_THEME;
   const tabs: Tab[] = [];
   let activeKey: string | null = null;
   let counter = 0;
   let fitTimer: number | null = null;
-
   let editingKey: string | null = null;
   let editValue = "";
   let dragKey: string | null = null;
@@ -282,7 +279,7 @@ export function createTerminalApp({ root, link }: TerminalAppOptions): void {
       scrollback: TERMINAL_SCROLLBACK,
       rightClickSelectsWord: true,
       macOptionIsMeta: false,
-      theme: TERMINAL_THEME,
+      theme: activeTheme,
     });
 
     try {
@@ -485,8 +482,10 @@ export function createTerminalApp({ root, link }: TerminalAppOptions): void {
   });
 
   link.onPalette((tokens) => {
+    activeTheme = themeFor(tokens);
+    applyPalette(tokens);
     for (const tab of tabs) {
-      tab.term.options.theme = themeFor(tokens);
+      tab.term.options.theme = activeTheme;
     }
   });
   link.announceReady();
