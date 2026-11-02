@@ -20,6 +20,7 @@ body,
 body {
   background: var(--term-bg);
   color: var(--term-fg);
+  font-size: var(--ponpoko-font-body, 16px);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Thai", sans-serif;
   overflow: hidden;
 }
@@ -104,7 +105,7 @@ body {
   border-right: 1px solid var(--term-border);
   padding: 0 6px 0 10px;
   color: var(--term-fg-muted);
-  font-size: 11px;
+  font-size: var(--ponpoko-font-ui, 14px);
   outline: none;
 }
 
@@ -181,7 +182,7 @@ body {
   border-radius: 4px;
   background: transparent;
   color: var(--term-fg-muted);
-  font-size: 14px;
+  font-size: var(--ponpoko-font-ui, 14px);
   line-height: 1;
 }
 
@@ -257,7 +258,7 @@ body {
   justify-content: center;
   gap: 10px;
   color: var(--term-fg-muted);
-  font-size: 12px;
+  font-size: var(--ponpoko-font-ui, 14px);
 }
 
 .terminal-empty[hidden] {
@@ -293,7 +294,7 @@ body {
   flex: 0 0 auto;
   padding: 2px 10px 0;
   color: var(--term-fg-muted);
-  font-size: 11px;
+  font-size: var(--ponpoko-font-ui, 14px);
 }
 
 .terminal-notice.is-error {
@@ -305,7 +306,7 @@ body {
   border-top: 1px solid var(--term-border);
   padding: 4px 10px;
   color: var(--term-fg-dim);
-  font-size: 10.5px;
+  font-size: var(--ponpoko-font-ui, 14px);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -321,7 +322,7 @@ body {
   gap: 12px;
   padding: 0 24px;
   color: var(--term-fg-muted);
-  font-size: 13px;
+  font-size: var(--ponpoko-font-ui, 14px);
   line-height: 1.5;
 }
 
