@@ -7,7 +7,8 @@
   "scripts": {
     "build": "bun run typecheck && bunx vite build && bun scripts/build.mjs",
     "typecheck": "bunx tsc -p tsconfig.json --noEmit",
-    "test": "bun test test"
+    "test": "bun test test",
+    "check:reclaim": "cargo build --release --bins --manifest-path backend/Cargo.toml && node scripts/reclaim-proof.mjs"
   },
   "dependencies": {
     "@fontsource/noto-sans-thai": "^5.3.0",

@@ -20,6 +20,7 @@ import { TERMINAL_KEY_HINT } from "./keymap";
 import { renderTabs as renderTabStrip, type Tab } from "./terminal/strip";
 import { handleKey as handleTabKey, type KeyPorts } from "./terminal/keys";
 import { sessionOps } from "./terminal/session";
+import { pageClients, reclaimSessions } from "./terminal/reclaim";
 import { clamp, element, message, shellName } from "./terminal/helpers";
 import { legacyCopy } from "./terminal/legacy";
 import { cleanTabTitle, moveItem } from "./tabs";
@@ -330,8 +331,12 @@ export function createTerminalApp({ root, link }: TerminalAppOptions): void {
     });
   }
 
+  const clients = pageClients();
+  const reclaim = { api, clients };
+
   const session = sessionOps({
     api,
+    reclaim,
     say,
     writeOut,
     wake,
@@ -472,7 +477,11 @@ export function createTerminalApp({ root, link }: TerminalAppOptions): void {
   });
 
   link.onHello(() => {
-    if (tabs.length === 0) openTab();
+    void reclaimSessions(reclaim)
+      .catch(() => 0)
+      .then(() => {
+        if (tabs.length === 0) openTab();
+      });
   });
 
   link.onPalette((tokens) => {

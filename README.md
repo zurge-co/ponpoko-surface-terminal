@@ -23,6 +23,18 @@ bun run build
 bun test
 ```
 
+Three checks, each covering a different side of the surface:
+
+- `bun test` — the page's own rules (key map, tab order, base64 transport,
+  config, and the reclaim rules a reloaded page follows).
+- `cargo test --manifest-path backend/Cargo.toml` — the backend's PTY and
+  session bookkeeping, including that a silent session is swept and frees its
+  slot.
+- `bun run check:reclaim` — builds the release binaries and drives a real
+  `bin/terminal-backend` over stdio: opens all 8 shells, shows the 9th refused,
+  waits out `PONPOKO_TERMINAL_IDLE_MS`, and fails unless the same open then
+  succeeds with only the new page's session left.
+
 Ponpoko clones this repository itself (`poko surface-clone`), builds it
 (`poko surface-build`) and installs the `dist/` that comes out
 (`poko surface-install --bundle dist`). The bundle contains the page,
@@ -101,6 +113,20 @@ a byte-for-byte real-time stream, and the honest limits are:
   sends `term.close` on the way out and the host then stops that window's
   backend process (`shutdown_window` on the window's `Destroyed` event), which
   signals the shells' process group with it.
+- **A reloaded page gets its slots back.** The backend process outlives the page
+  that talked to it, so a reload (or a surface the host restarted in the same
+  process) used to leave its old shells held, and the ninth open failed with
+  *this terminal already has 8 shells open*. Each `term.open` now carries a
+  `client` token: the page keeps the current one in `sessionStorage` and the one
+  it replaced, so on `hello` it closes the shells of the page before it. Shells
+  it did not open are only touched when they are already dead or nothing has
+  polled them for `RECLAIM_IDLE_MS` (30 s) — a second page of the same window is
+  never pulled out from under a shell it is using. If an open is refused anyway,
+  the page sweeps once and tries again. The backend sweeps on its own as well:
+  any session nobody has written to or polled for `SESSION_IDLE_MS` is killed
+  before `term.open` decides the limit was hit, so a page that vanishes without
+  a word frees its shells within a minute. `term.list` reports each session's
+  `client` and `idle_ms` so this is visible instead of guessed.
 - **The host logs every backend frame, up to a cap.** Ponpoko records this
   surface's JSON-RPC requests and answers (base64 terminal input and output
   included) at `<app data dir>/logs/surface-backends/terminal.log` for the main
@@ -135,7 +161,9 @@ window that regains focus asks again immediately.
 
 `app.ping`, `app.info`, `term.open`, `term.write`, `term.poll`, `term.resize`,
 `term.close`, `term.list`. JSON-RPC 2.0 over stdin/stdout, one object per line.
-Output is base64 because a PTY is a byte stream.
+Output is base64 because a PTY is a byte stream. `term.open` takes an optional
+`client` token that its session carries from then on, and `term.list` answers
+`sessions` (each with `client` and `idle_ms`) plus the session `limit`.
 
 The table lives in `backend/src/lib.rs`, and two programs read it:
 `bin/terminal-backend` (the JSON-RPC process Ponpoko starts) and `bin/terminal-cli`

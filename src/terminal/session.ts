@@ -2,11 +2,13 @@ import type { Tab } from "./strip";
 import type { PollAnswer, TerminalApi } from "../api";
 import { decodeBase64 } from "../base64";
 import { MAX_POLL_BYTES, POLL_ACTIVE_MS, nextPollDelay } from "../config";
+import { openShell, type ReclaimPorts } from "./reclaim";
 
 const MAX_PENDING_INPUT = 64 * 1024;
 
 export interface SessionPorts {
   api: TerminalApi;
+  reclaim: ReclaimPorts;
   say(text: string, error?: boolean): void;
   writeOut(tab: Tab, data: string | Uint8Array): void;
   wake(tab: Tab): void;
@@ -20,6 +22,7 @@ export interface SessionPorts {
 
 export function sessionOps(ports: SessionPorts) {
   const api = ports.api;
+  const reclaim = ports.reclaim;
   const say = ports.say;
   const writeOut = ports.writeOut;
   const wake = ports.wake;
@@ -31,7 +34,7 @@ export function sessionOps(ports: SessionPorts) {
   const shellName = ports.shellName;
   async function startSession(tab: Tab, cols: number, rows: number): Promise<void> {
     try {
-      const info = await api.open({ cols, rows });
+      const info = await openShell(reclaim, { cols, rows, client: reclaim.clients.own });
       if (!tab.alive) {
         void api.close(info.id).catch(() => {});
         return;

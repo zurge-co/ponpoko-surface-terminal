@@ -8,6 +8,16 @@ use portable_pty::{Child, MasterPty};
 
 pub const MAX_SESSIONS: usize = 8;
 
+pub const SESSION_IDLE_MS: u64 = 60_000;
+
+pub fn session_idle_ms() -> u64 {
+    std::env::var("PONPOKO_TERMINAL_IDLE_MS")
+        .ok()
+        .and_then(|value| value.trim().parse::<u64>().ok())
+        .filter(|ms| *ms > 0)
+        .unwrap_or(SESSION_IDLE_MS)
+}
+
 pub const MAX_WRITE_BYTES: usize = 64 * 1024;
 
 pub const MAX_POLL_BYTES: usize = 256 * 1024;
@@ -119,7 +129,10 @@ pub struct Session {
     exit: Option<ExitInfo>,
     exit_reported: bool,
     created_ms: u64,
+    client: Option<String>,
+    last_seen_ms: u64,
 }
+
 
 mod backend;
 mod session;

@@ -6,6 +6,7 @@ export interface OpenRequest {
   rows: number;
   cwd?: string;
   shell?: string;
+  client?: string;
 }
 
 export interface OpenAnswer {
@@ -37,10 +38,13 @@ export interface SessionInfo {
   exit_code?: number | null;
   signal?: string | null;
   created_ms: number;
+  client: string | null;
+  idle_ms: number;
 }
 
 export interface ListAnswer {
   sessions: SessionInfo[];
+  limit: number;
 }
 
 export interface WriteAnswer {
@@ -147,9 +151,14 @@ export function readListAnswer(value: unknown): ListAnswer {
       exit_code: typeof entry.exit_code === "number" ? entry.exit_code : null,
       signal: typeof entry.signal === "string" ? entry.signal : null,
       created_ms: typeof entry.created_ms === "number" ? entry.created_ms : 0,
+      client: typeof entry.client === "string" ? entry.client : null,
+      idle_ms: typeof entry.idle_ms === "number" ? entry.idle_ms : 0,
     };
   });
-  return { sessions };
+  return {
+    sessions,
+    limit: typeof value.limit === "number" ? value.limit : sessions.length,
+  };
 }
 
 export function createTerminalApi(link: SurfaceLink): TerminalApi {

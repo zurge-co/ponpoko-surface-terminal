@@ -226,6 +226,142 @@ pub fn the_output_buffer_drops_the_oldest_bytes_and_reports_once() {
     assert_eq!(data, b"ghij");
 }
 
+#[cfg(unix)]
+#[test]
+pub fn a_session_remembers_which_page_opened_it_and_list_reports_that_page() {
+    let mut backend = Backend::new();
+    let owned = exchange(
+        &mut backend,
+        "term.open",
+        json!({ "shell": "/bin/sh", "client": "page-a" }),
+    );
+    let owned = owned["result"]["id"].as_str().expect("an id").to_string();
+    let anonymous = exchange(&mut backend, "term.open", json!({ "shell": "/bin/sh" }));
+    assert!(anonymous["result"]["id"].as_str().is_some());
+
+    let listed = exchange(&mut backend, "term.list", json!({}));
+    assert_eq!(listed["result"]["limit"], MAX_SESSIONS);
+    let sessions = listed["result"]["sessions"].as_array().expect("sessions");
+    assert_eq!(sessions.len(), 2);
+    assert_eq!(sessions[0]["id"], owned.as_str());
+    assert_eq!(sessions[0]["client"], "page-a");
+    assert!(sessions[1]["client"].is_null());
+    for session in sessions {
+        assert!(session["idle_ms"].as_u64().is_some(), "idle_ms is a number");
+    }
+    close(&mut backend, &owned);
+}
+
+#[cfg(unix)]
+#[test]
+pub fn a_session_nobody_polls_is_swept_and_frees_its_slot() {
+    let mut backend = Backend::new();
+    let ids: Vec<String> = (0..MAX_SESSIONS)
+        .map(|_| {
+            let opened = exchange(&mut backend, "term.open", json!({ "shell": "/bin/sh" }));
+            opened["result"]["id"].as_str().expect("an id").to_string()
+        })
+        .collect();
+    let refused = exchange(&mut backend, "term.open", json!({ "shell": "/bin/sh" }));
+    assert_eq!(refused["error"]["code"], -32000);
+
+    for session in backend.sessions.iter_mut() {
+        session.last_seen_ms = 0;
+    }
+    let swept = backend.sweep_idle(SESSION_IDLE_MS, SESSION_IDLE_MS);
+    assert_eq!(swept, ids.len(), "every session past the grace period goes");
+
+    let opened = exchange(
+        &mut backend,
+        "term.open",
+        json!({ "shell": "/bin/sh", "client": "page-b" }),
+    );
+    let fresh = opened["result"]["id"].as_str().expect("an id").to_string();
+    let listed = exchange(&mut backend, "term.list", json!({}));
+    let remaining = listed["result"]["sessions"].as_array().expect("sessions");
+    assert_eq!(remaining.len(), 1, "the sweeping left room for the new shell");
+    assert_eq!(remaining[0]["id"], fresh.as_str());
+    close(&mut backend, &fresh);
+}
+
+#[cfg(unix)]
+#[test]
+pub fn an_open_at_the_limit_sweeps_the_silent_shells_instead_of_refusing() {
+    let mut backend = Backend::new();
+    for _ in 0..MAX_SESSIONS {
+        let opened = exchange(
+            &mut backend,
+            "term.open",
+            json!({ "shell": "/bin/sh", "client": "page-gone" }),
+        );
+        assert!(opened["result"]["id"].as_str().is_some());
+    }
+    for session in backend.sessions.iter_mut() {
+        session.last_seen_ms = 0;
+    }
+
+    let opened = exchange(
+        &mut backend,
+        "term.open",
+        json!({ "shell": "/bin/sh", "client": "page-new" }),
+    );
+    assert!(opened.get("error").is_none(), "the open swept and then opened");
+    let listed = exchange(&mut backend, "term.list", json!({}));
+    let sessions = listed["result"]["sessions"].as_array().expect("sessions");
+    assert_eq!(sessions.len(), 1);
+    assert_eq!(sessions[0]["client"], "page-new");
+    close(
+        &mut backend,
+        sessions[0]["id"].as_str().expect("an id"),
+    );
+}
+
+#[test]
+pub fn the_idle_grace_period_can_be_shortened_by_the_environment_and_never_becomes_zero() {
+    let read = |value: &str| {
+        std::env::set_var("PONPOKO_TERMINAL_IDLE_MS", value);
+        session_idle_ms()
+    };
+    let shortened = read("1500");
+    let floor = read("0");
+    let garbled = read("not a number");
+    std::env::remove_var("PONPOKO_TERMINAL_IDLE_MS");
+    let unset = session_idle_ms();
+
+    assert_eq!(shortened, 1500);
+    assert_eq!(floor, SESSION_IDLE_MS, "zero would mean sweeping live shells");
+    assert_eq!(garbled, SESSION_IDLE_MS);
+    assert_eq!(unset, SESSION_IDLE_MS);
+}
+
+#[cfg(unix)]
+#[test]
+pub fn a_polled_session_outlives_the_grace_period_and_an_idle_one_does_not() {
+    let mut backend = Backend::new();
+    let live = exchange(&mut backend, "term.open", json!({ "shell": "/bin/sh" }));
+    let live = live["result"]["id"].as_str().expect("an id").to_string();
+    let stale = exchange(&mut backend, "term.open", json!({ "shell": "/bin/sh" }));
+    let stale = stale["result"]["id"].as_str().expect("an id").to_string();
+    for session in backend.sessions.iter_mut() {
+        if session.id == stale {
+            session.last_seen_ms = 0;
+        }
+    }
+    exchange(&mut backend, "term.poll", json!({ "id": live, "max_bytes": 1024 }));
+
+    assert_eq!(
+        backend.sweep_idle(now_ms(), SESSION_IDLE_MS),
+        1,
+        "only the silent session is closed"
+    );
+    let listed = exchange(&mut backend, "term.list", json!({}));
+    let remaining = listed["result"]["sessions"].as_array().expect("sessions");
+    assert_eq!(remaining.len(), 1);
+    assert_eq!(remaining[0]["id"], live.as_str());
+    assert!(remaining[0]["idle_ms"].as_u64().unwrap_or(u64::MAX) < SESSION_IDLE_MS);
+    close(&mut backend, &live);
+}
+
 #[test]
 pub fn a_missing_cwd_falls_back_to_home_instead_of_failing_the_shell() {
     if let Some(home) = home_dir() {

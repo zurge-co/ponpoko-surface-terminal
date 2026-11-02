@@ -9,7 +9,7 @@ use serde_json::{json, Value};
 use super::*;
 
 pub struct Backend {
-    sessions: Vec<Session>,
+    pub(crate) sessions: Vec<Session>,
     next_id: u64,
 }
 
@@ -50,6 +50,12 @@ impl Backend {
     }
 
     pub fn open(&mut self, params: &Value) -> Result<Value, RpcError> {
+        let client = optional_str(params, "client")?
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .map(str::to_string);
+
+        self.sweep_idle(now_ms(), session_idle_ms());
         if self.sessions.len() >= MAX_SESSIONS {
             return Err(failure(format!(
                 "this terminal already has {MAX_SESSIONS} shells open (the limit) — close one before opening another"
@@ -127,6 +133,7 @@ impl Backend {
             })?;
 
         let pid = child.process_id().unwrap_or(0);
+        let opened_ms = now_ms();
         let session = Session {
             id: id.clone(),
             shell: shell.display().to_string(),
@@ -139,7 +146,9 @@ impl Backend {
             output,
             exit: None,
             exit_reported: false,
-            created_ms: now_ms(),
+            created_ms: opened_ms,
+            client,
+            last_seen_ms: opened_ms,
         };
         self.sessions.push(session);
 
@@ -165,6 +174,7 @@ impl Backend {
             )));
         }
         let session = self.session_mut(id)?;
+        session.last_seen_ms = now_ms();
         session
             .writer
             .write_all(&bytes)
@@ -177,6 +187,7 @@ impl Backend {
         let id = required_str(params, "id")?;
         let max = optional_usize(params, "max_bytes", DEFAULT_POLL_BYTES)?.clamp(1, MAX_POLL_BYTES);
         let session = self.session_mut(id)?;
+        session.last_seen_ms = now_ms();
 
         let (data, dropped, reader_done) = {
             let mut buffer = session
@@ -255,6 +266,7 @@ impl Backend {
     }
 
     pub fn list(&self) -> Value {
+        let now = now_ms();
         let sessions: Vec<Value> = self
             .sessions
             .iter()
@@ -270,10 +282,28 @@ impl Backend {
                     "exit_code": session.exit.as_ref().map(|exit| exit.code),
                     "signal": session.exit.as_ref().and_then(|exit| exit.signal.clone()),
                     "created_ms": session.created_ms,
+                    "client": session.client,
+                    "idle_ms": now.saturating_sub(session.last_seen_ms),
                 })
             })
             .collect();
-        json!({ "sessions": sessions })
+        json!({ "sessions": sessions, "limit": MAX_SESSIONS })
+    }
+
+    pub fn sweep_idle(&mut self, now: u64, idle_ms: u64) -> usize {
+        let mut closed = 0;
+        let mut index = 0;
+        while index < self.sessions.len() {
+            let idle = now.saturating_sub(self.sessions[index].last_seen_ms);
+            if idle >= idle_ms {
+                let mut session = self.sessions.remove(index);
+                let _ = session.child.kill();
+                closed += 1;
+            } else {
+                index += 1;
+            }
+        }
+        closed
     }
 
     pub fn session_mut(&mut self, id: &str) -> Result<&mut Session, RpcError> {
