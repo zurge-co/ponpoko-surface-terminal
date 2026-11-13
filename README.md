@@ -35,9 +35,9 @@ Three checks, each covering a different side of the surface:
   waits out `PONPOKO_TERMINAL_IDLE_MS`, and fails unless the same open then
   succeeds with only the new page's session left.
 
-Ponpoko clones this repository itself (`poko surface-clone`), builds it
-(`poko surface-build`) and installs the `dist/` that comes out
-(`poko surface-install --bundle dist`). The bundle contains the page,
+Ponpoko clones this repository itself (`ponpoko surface-clone`), builds it
+(`ponpoko surface-build`) and installs the `dist/` that comes out
+(`ponpoko surface-install --bundle dist`). The bundle contains the page,
 `surface.json`, and both compiled programs: `bin/terminal-backend` (what Ponpoko
 starts) and `bin/terminal-cli` (the surface's own command line).
 
@@ -197,3 +197,11 @@ printf '%s\n' \
 `key=value` values are typed the way JSON spells them and stay text otherwise;
 use `--json` when a value must be exactly a string. The CLI kills every shell it
 opened before it exits.
+
+## Public Host contract
+
+External agents start with [the Surface SDK skill](https://github.com/zurge-co/ponpoko-surface-sdk/blob/main/SKILL.md).
+The versioned broker, types and compatibility checks are public; a private Host
+checkout is not required. This surface has no AI requirement and does not need
+to vendor AI assets merely to use its backend. The Host remains the authority
+for installation and frame scope. This repository has no automatic CI workflow.
