@@ -1,10 +1,13 @@
 import "@fontsource/noto-sans-thai/thai-400.css";
 import "@fontsource/noto-sans-thai/thai-600.css";
 import "@xterm/xterm/css/xterm.css";
+import "./fonts.css";
 import "./styles.css";
 
 import { createSurfaceLink, parentTransport, viewTokenFromLocation } from "./bridge";
 import { createTerminalApp } from "./terminal";
+import { TERMINAL_FONT_SIZE, TERMINAL_THAI_FONT } from "./config";
+import { warmTerminalThai } from "./terminal/fonts";
 
 function renderUnhosted(root: HTMLElement): void {
   const shell = document.createElement("div");
@@ -29,7 +32,7 @@ function renderUnhosted(root: HTMLElement): void {
   root.replaceChildren(shell);
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const root = document.getElementById("app");
   if (!root) throw new Error("the terminal surface has no #app element to mount into");
 
@@ -39,8 +42,10 @@ function main(): void {
     return;
   }
 
+  await warmTerminalThai(TERMINAL_THAI_FONT, TERMINAL_FONT_SIZE);
+
   const link = createSurfaceLink({ view, transport: parentTransport() });
   createTerminalApp({ root, link });
 }
 
-main();
+void main();

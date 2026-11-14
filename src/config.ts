@@ -1,7 +1,21 @@
-export const TERMINAL_FONT_FAMILY =
-  '"SF Mono", "SFMono-Regular", Menlo, Monaco, "Noto Sans Thai", "IBM Plex Sans Thai Looped", Thonburi, Ayuthaya, monospace';
+export const TERMINAL_THAI_FONT = '"Terminal Thai"';
+
+export const TERMINAL_FONT_FAMILY = [
+  TERMINAL_THAI_FONT,
+  '"SF Mono"',
+  '"SFMono-Regular"',
+  "Menlo",
+  "Monaco",
+  '"IBM Plex Sans Thai Looped"',
+  "Thonburi",
+  "Ayuthaya",
+  "monospace",
+].join(", ");
 
 export const TERMINAL_FONT_SIZE = 15;
+
+export const TERMINAL_LINE_HEIGHT = 1.35;
+
 export const TERMINAL_SCROLLBACK = 10_000;
 
 export const TERMINAL_THEME = {

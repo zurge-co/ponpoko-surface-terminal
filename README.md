@@ -80,8 +80,27 @@ are not remapped.
 - xterm runs with the **unicode-graphemes addon** (`allowProposedApi`): a Thai
   base character plus its combining vowels and tone marks occupies one cell, so
   the cursor and backspace stay on the glyph instead of drifting.
-- The font stack falls back to the Thai faces macOS installs: IBM Plex Sans Thai
-  Looped, Thonburi, Ayuthaya.
+- Thai is drawn by the bundled **Terminal Thai** face (`src/fonts.css`, limited
+  to Thai codepoints) and it leads the font stack, so a Latin mono face that
+  happens to carry Thai glyphs (Menlo, SF Mono) never wins the characters. Latin
+  keeps the mono cell; the macOS Thai faces (IBM Plex Sans Thai Looped,
+  Thonburi, Ayuthaya) stay behind it as the last resort.
+- That face is Athiti's Thai subset **normalised to the mono cell** by
+  `scripts/thai-mono-cells.py` (`pip install fonttools brotli`, then run it on
+  `@fontsource/athiti`'s 500 and 600 woff2 to regenerate
+  `src/fonts/terminal-thai-*.woff2`). Every Thai glyph advances exactly one cell
+  (600/1000 em, the advance of SF Mono and Menlo), so xterm never pads or
+  squeezes a Thai run; the five leading vowels (เ แ โ ใ ไ) are pushed to the
+  right edge of their cell so they sit against the consonant they belong to
+  instead of leaving half a cell empty. Glyphs wider than a cell are scaled down
+  and their GPOS anchors travel with them, so tone marks stay on their base.
+  SARA AM (ำ) is left as the face drew it — it needs two cells while xterm gives
+  a Thai cluster one, so it reaches into the cell after it.
+- The page warms that face before the first shell opens: xterm measures a row
+  when it paints and never re-measures after a webfont lands, so a cold face
+  would leave every Thai run measured against the fallback.
+- `lineHeight` is 1.35 rather than the usual 1.2 — a row shorter than the Thai
+  ink clips tone marks above and below the baseline.
 - PTY output and input cross the bridge as **base64 bytes**. A Thai character is
   three UTF-8 bytes and a PTY read may split it; xterm's decoder joins the
   writes instead of the page corrupting the character.

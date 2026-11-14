@@ -317,13 +317,16 @@ describe("base64 byte transport — Thai survives every chunk boundary", () => {
 });
 
 describe("terminal configuration — Thai is a first-class cell concern", () => {
-  test("the font stack falls back to macOS Thai faces after the Latin mono", () => {
-    const latin = TERMINAL_FONT_FAMILY.indexOf("SF Mono");
-    const thai = TERMINAL_FONT_FAMILY.indexOf("IBM Plex Sans Thai Looped");
-    expect(latin).toBeGreaterThanOrEqual(0);
-    expect(thai).toBeGreaterThan(latin);
+  test("the Thai face leads the stack so no Latin mono font wins Thai glyphs", () => {
+    const families = TERMINAL_FONT_FAMILY.split(",").map((family) => family.trim());
+    expect(families[0]).toContain("Terminal Thai");
+    expect(families.indexOf('"SF Mono"')).toBeGreaterThan(0);
+    expect(TERMINAL_FONT_FAMILY.indexOf("IBM Plex Sans Thai Looped")).toBeGreaterThan(
+      TERMINAL_FONT_FAMILY.indexOf("SF Mono"),
+    );
     expect(TERMINAL_FONT_FAMILY).toContain("Thonburi");
     expect(TERMINAL_FONT_FAMILY).toContain("Ayuthaya");
+    expect(families[families.length - 1]).toBe("monospace");
   });
 
   test("the palette is Ponpoko's and the buffers are bounded", () => {
